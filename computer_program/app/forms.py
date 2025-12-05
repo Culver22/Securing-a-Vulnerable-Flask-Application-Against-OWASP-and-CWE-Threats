@@ -1,7 +1,7 @@
 import re
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField
-from wtforms.validators import (DataRequired, Length, EqualTo, ValidationError, Regexp)
+from wtforms.validators import (DataRequired, Length, EqualTo, ValidationError, Regexp, length)
 from flask import current_app
 
 password_blacklist = {"Password123$", "Qwerty123!", "Adminadmin1@", "weLcome123!"}
@@ -61,3 +61,24 @@ def validate_password(form, field):
         raise ValidationError(
             "Password must not contain repeated character sequences like 'aaa' or '111'."
         )
+
+class LoginForm(FlaskForm):
+    username = StringField("Email", validators=[DataRequired(message="Email address is required"),
+                                                Length(max=254),
+                                                Regexp(email_regex, message="Please enter a valid email address.")])
+    password = PasswordField("Password", validators=[DataRequired()])
+    submit = SubmitField("Login")
+
+class RegisterForm(FlaskForm):
+    username = StringField("Email", validators=[DataRequired(message="Email is required."), Length(max=254),
+                                                Regexp(email_regex, message="Please enter a valid email address.")])
+    password = PasswordField("Password",
+        validators=[DataRequired(message="Password is required."), validate_password])
+
+    confirm_password = PasswordField("Confirm Password",
+        validators=[DataRequired(), EqualTo("password", message="Passwords must match.")])
+
+    bio = TextAreaField("Biography", validators=[DataRequired(message="Biography is required."),
+            Length(min=1, max=1000, message="Biography must be between 1 and 1000 characters long.")])
+
+    submit = SubmitField("Register")
