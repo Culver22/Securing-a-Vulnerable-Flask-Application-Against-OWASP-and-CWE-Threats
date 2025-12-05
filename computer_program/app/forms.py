@@ -1,5 +1,6 @@
 import re
 from flask_wtf import FlaskForm
+from werkzeug.security import check_password_hash
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField
 from wtforms.validators import (DataRequired, Length, EqualTo, ValidationError, Regexp, length)
 from flask import current_app
@@ -82,3 +83,19 @@ class RegisterForm(FlaskForm):
             Length(min=1, max=1000, message="Biography must be between 1 and 1000 characters long.")])
 
     submit = SubmitField("Register")
+
+class ChangePasswordForm(FlaskForm):
+    current_password = PasswordField("Current Password", validators=[DataRequired()])
+
+    new_password = PasswordField("New Password", validators=[DataRequired(), validate_password])
+
+    confirm_new_password = PasswordField("Confirm New Password",
+        validators=[DataRequired(), EqualTo("new_password", message="New passwords must match.")])
+
+    submit = SubmitField("Change Password")
+    """
+    def validate_new_password(form, field):
+        if current_user.is_authenticated:
+            if check_password_hash(current_user.password, field.data):
+                raise ValidationError("New password must be different than your current password.")
+    """
