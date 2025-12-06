@@ -1,6 +1,4 @@
-import traceback
 from flask import request, render_template, redirect, url_for, session, Blueprint, flash, abort
-from sqlalchemy import text
 from app import db
 from app.models import User
 from app.forms import LoginForm, RegisterForm, ChangePasswordForm
@@ -52,7 +50,7 @@ def dashboard():
         return redirect(url_for('main.login'))
 
     # using get_bio() from models to decrypt and return safe bio
-    return render_template('dashboard.html', user=user.username, bio=user.get_bio())
+    return render_template('dashboard.html', username=user.username, bio=user.get_bio())
 
 
 @main.route('/register', methods=['GET', 'POST'])
@@ -67,7 +65,7 @@ def register():
         # check email isn't already registered
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
-            flash('An account with the email address: %s already exists' % username, 'error')
+            flash(f"An account with the email address '{username}' already exists", "error")
             return render_template('register.html', form=form)
 
         user = User(username=username, password=password, role='user', bio=bio)
@@ -83,22 +81,19 @@ def register():
 @main.route('/admin-panel')
 def admin():
     if session.get('role') != 'admin':
-        stack = ''.join(traceback.format_stack(limit=25))
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
+        abort(403)
     return render_template('admin.html')
 
 @main.route('/moderator')
 def moderator():
     if session.get('role') != 'moderator':
-        stack = ''.join(traceback.format_stack(limit=25))
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
+        abort(403)
     return render_template('moderator.html')
 
 @main.route('/user-dashboard')
 def user_dashboard():
     if session.get('role') != 'user':
-        stack = ''.join(traceback.format_stack(limit=25))
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
+        abort(403)
 
     user = User.query.filter_by(username=session.get('user')).first()
     # security double-check
@@ -114,8 +109,7 @@ def user_dashboard():
 def change_password():
     # Require basic "login" state
     if 'user' not in session:
-        stack = ''.join(traceback.format_stack(limit=25))
-        abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
+        abort(403)
 
     form = ChangePasswordForm()
 
