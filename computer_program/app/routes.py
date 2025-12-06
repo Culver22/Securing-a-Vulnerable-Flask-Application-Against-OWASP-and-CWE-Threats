@@ -99,7 +99,15 @@ def user_dashboard():
     if session.get('role') != 'user':
         stack = ''.join(traceback.format_stack(limit=25))
         abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
-    return render_template('user_dashboard.html', username=session.get('user'))
+
+    user = User.query.filter_by(username=session.get('user')).first()
+    # security double-check
+    if not user:
+        flash('User not found.', 'error')
+        session.clear()
+        return redirect(url_for('main.login'))
+
+    return render_template('user_dashboard.html', username=user.username, bio=user.get_bio())
 
 
 @main.route('/change-password', methods=['GET', 'POST'])
