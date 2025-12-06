@@ -17,9 +17,10 @@ def _get_fernet():
     return Fernet(key)
 
 def sanitise_bio(raw_bio):
+    # escape all HTML the user has provided so that it is treated as plain text
     if raw_bio is None:
         return ""
-    return html.escape(raw_bio.strip(), quote = True) # translate the HTML to safe plain text
+    return html.escape(raw_bio.strip(), quote = True)
 
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -37,10 +38,17 @@ class User(db.Model):
         self.set_bio(bio) # sanitised and encrypted
 
     def set_password(self, password):
+        # hash and store the user's password
         pepper = current_app.config.get("PASSWORD_PEPPER", "")
         # combine the raw password and pepper before hashing
         unsafe_password = (password or "") + pepper
         self.password = generate_password_hash(unsafe_password)
+
+    def check_password(self, password):
+        # verify the unsafe password against the hashed password
+        pepper = current_app.config.get("PASSWORD_PEPPER", "")
+        unsafe_password = (password or "") + pepper
+        return check_password_hash(self.password, unsafe_password)
 
 
 
