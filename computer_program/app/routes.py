@@ -3,6 +3,7 @@ from flask import request, render_template, redirect, url_for, session, Blueprin
 from sqlalchemy import text
 from app import db
 from app.models import User
+from app.forms import LoginForm, RegisterForm, ChangePasswordForm
 
 main = Blueprint('main', __name__)
 
