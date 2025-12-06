@@ -16,6 +16,11 @@ def _get_fernet():
         key = key.encode('utf-8')
     return Fernet(key)
 
+def sanitise_bio(raw_bio):
+    if raw_bio is None:
+        return ""
+    return html.escape(raw_bio.strip(), quote = True) # translate the HTML to safe plain text
+
 
 
 
