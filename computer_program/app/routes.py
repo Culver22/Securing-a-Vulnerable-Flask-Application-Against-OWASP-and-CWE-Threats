@@ -13,19 +13,30 @@ def home():
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        row = db.session.execute(text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{password}'")).mappings().first()
-        if row:
-            user = db.session.get(User, row['id'])  # creates a User object
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        # make email address consistent
+        username = form.username.data.strip().lower()
+        password = form.password.data
+
+        # lookup user by email address
+        user = User.query.filter_by(username=username).first()
+
+        # check hashed password
+        if user and user.check_password(password):
+            # clear pre-existing data
+            session.clear()
             session['user'] = user.username
             session['role'] = user.role
-            session['bio'] = user.bio
+
+            flash('Login Successful', 'success')
             return redirect(url_for('main.dashboard'))
         else:
-            flash('Login credentials are invalid, please try again')
-    return render_template('login.html')
+            flash('Login Unsuccessful, please try again', 'error')
+
+    return render_template('login.html', form=form)
+
 
 @main.route('/dashboard')
 def dashboard():
