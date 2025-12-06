@@ -21,24 +21,28 @@ def sanitise_bio(raw_bio):
         return ""
     return html.escape(raw_bio.strip(), quote = True) # translate the HTML to safe plain text
 
-
-
-
-
-"""
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    # email address is allowed up to 254 characters
+    username = db.Column(db.String(254), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(50), default='user', nullable=False)
-    bio = db.Column(db.String(500), nullable=False)
+    #Encrypted biography, Text is safer than fixed length string
+    bio = db.Column(db.Text, nullable=False)
 
     def __init__(self, username, password, role, bio):
         self.username = username
-        self.password = password
+        self.set_password(password) # hash and pepper
         self.role = role
-        self.bio = bio
-"""
+        self.set_bio(bio) # sanitised and encrypted
+
+    def set_password(self, password):
+        pepper = current_app.config.get("PASSWORD_PEPPER", "")
+        # combine the raw password and pepper before hashing
+        unsafe_password = (password or "") + pepper
+        self.password = generate_password_hash(unsafe_password)
+
+
 
 
 
