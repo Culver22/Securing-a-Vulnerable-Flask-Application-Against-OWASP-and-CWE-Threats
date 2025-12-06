@@ -7,7 +7,7 @@ from app import db
 
 def _get_fernet():
     # get encryption key from flask config, loaded from an environment variable in config.py
-    key = current_app.config.get['FERNET_KEY']
+    key = current_app.config.get["FERNET_KEY"]
     # in order to avoid running insecurely, end the program
     if not key:
         raise RuntimeError('FERNET_KEY has not been set in the environment')
@@ -38,7 +38,8 @@ class User(db.Model):
         self.set_bio(bio) # sanitised and encrypted
 
     def set_password(self, password):
-        # hash and store the user's password
+        # hash password (using PBKDF2). salt is added automatically, pepper added from config
+
         pepper = current_app.config.get("PASSWORD_PEPPER", "")
         # combine the raw password and pepper before hashing
         unsafe_password = (password or "") + pepper
@@ -46,9 +47,33 @@ class User(db.Model):
 
     def check_password(self, password):
         # verify the unsafe password against the hashed password
+
         pepper = current_app.config.get("PASSWORD_PEPPER", "")
         unsafe_password = (password or "") + pepper
         return check_password_hash(self.password, unsafe_password)
+
+    def set_bio(self, bio):
+        # sanitise and encrypt bio before storing
+
+        safe_bio = sanitise_bio(bio)
+        fernet = _get_fernet()
+        encrypted = fernet.encrypt(safe_bio.encode('utf-8'))
+        # encrypt bio to bytes, then decode to a UTF-8 string which can be safely stored in the db
+        self.bio = encrypted.decode('utf-8')
+
+    def get_bio(self):
+        # decrypt and return the stored bio as safe text
+
+        if not self.bio:
+            # return a safe blank biography
+            return ""
+        fernet = _get_fernet()
+        try:
+            decrypted_bio = fernet.decrypt(self.bio.encode('utf-8'))
+            return decrypted_bio.decode('utf-8')
+        except InvalidToken:
+            return ""
+
 
 
 
