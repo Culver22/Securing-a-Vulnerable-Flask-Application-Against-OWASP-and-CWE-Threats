@@ -57,15 +57,28 @@ def dashboard():
 
 @main.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        bio = request.form['bio']
-        role = request.form.get('role', 'user')
-        db.session.execute(text(f"INSERT INTO user (username, password, role, bio) VALUES ('{username}', '{password}', '{role}', '{bio}')"))
+    form = RegisterForm()
+
+    if form.validate_on_submit():
+        username = form.username.data.strip().lower()
+        password = form.password.data
+        bio = form.bio.data
+
+        # check email isn't already registered
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash('An account with the email address: %s already exists' % username, 'error')
+            return render_template('register.html', form=form)
+
+        user = User(username=username, password=password, role='user', bio=bio)
+        db.session.add(user)
         db.session.commit()
+
+        flash('Registration Successful', 'success')
         return redirect(url_for('main.login'))
-    return render_template('register.html')
+
+    return render_template('register.html', form=form)
+
 
 @main.route('/admin-panel')
 def admin():
