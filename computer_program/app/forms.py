@@ -93,9 +93,3 @@ class ChangePasswordForm(FlaskForm):
         validators=[DataRequired(), EqualTo("new_password", message="New passwords must match.")])
 
     submit = SubmitField("Change Password")
-    """
-    def validate_new_password(form, field):
-        if current_user.is_authenticated:
-            if check_password_hash(current_user.password, field.data):
-                raise ValidationError("New password must be different than your current password.")
-    """

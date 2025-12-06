@@ -117,34 +117,35 @@ def change_password():
         stack = ''.join(traceback.format_stack(limit=25))
         abort(403, description=f"Access denied.\n\n--- STACK (demo) ---\n{stack}")
 
-    username = session['user']
+    form = ChangePasswordForm()
 
-    if request.method == 'POST':
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
+    user = User.query.filter_by(username=session.get('user')).first()
+    if not user:
+        flash('User not found.', 'error')
+        session.clear()
+        return redirect(url_for('main.login'))
 
-        user = db.session.execute(
-            text(f"SELECT * FROM user WHERE username = '{username}' AND password = '{current_password}' LIMIT 1")
-        ).mappings().first()
+    if form.validate_on_submit():
+        current_password = form.current_password.data
+        new_password = form.new_password.data
 
-        # Enforce: current password must be valid for user
-        if not user:
+        # check current password against the hashed password
+        if not user.check_password(current_password):
             flash('Current password is incorrect', 'error')
-            return render_template('change_password.html')
+            return render_template('change_password.html', form=form)
 
-        # Enforce: new password must be different from current password
-        if new_password == current_password:
-            flash('New password must be different from the current password', 'error')
-            return render_template('change_password.html')
+        # check the new password is different to the current password
+        if user.check_password(new_password):
+            flash("New password must be different from your current password.", "error")
+            return render_template('change_password.html', form=form)
 
-        db.session.execute(
-            text(f"UPDATE user SET password = '{new_password}' WHERE username = '{username}'")
-        )
+        # hash and pepper the new password
+        user.set_password(new_password)
         db.session.commit()
 
-        flash('Password changed successfully', 'success')
+        flash('Your password has been changed.', 'success')
         return redirect(url_for('main.dashboard'))
 
-    return render_template('change_password.html')
+    return render_template('change_password.html', form=form)
 
 
