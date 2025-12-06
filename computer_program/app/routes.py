@@ -40,11 +40,20 @@ def login():
 
 @main.route('/dashboard')
 def dashboard():
-    if 'user' in session:
-        username = session['user']
-        bio = session['bio']
-        return render_template('dashboard.html', username=username, bio=bio)
-    return redirect(url_for('main.login'))
+    if 'user' not in session:
+        return redirect(url_for('main.login'))
+
+    # load the current user from the database
+    user = User.query.filter_by(username=session['user']).first()
+    # security double-check
+    if not user:
+        flash('User not found', 'error')
+        session.clear()
+        return redirect(url_for('main.login'))
+
+    # using get_bio() from models to decrypt and return safe bio
+    return render_template('dashboard.html', user=user.username, bio=user.get_bio())
+
 
 @main.route('/register', methods=['GET', 'POST'])
 def register():
