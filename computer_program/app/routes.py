@@ -2,8 +2,22 @@ from flask import request, render_template, redirect, url_for, session, Blueprin
 from app import db
 from app.models import User
 from app.forms import LoginForm, RegisterForm, ChangePasswordForm
+from functools import wraps
 
 main = Blueprint('main', __name__)
+
+def roles_required(required_role):
+    def decorator(view_function):
+        @wraps(view_function)
+        def wrapped_view(*args, **kwargs):
+            if 'user' not in session:
+                flash('Please log in.', 'error')
+                return redirect(url_for('main.login'))
+            if session.get('role') != required_role:
+                abort(403)
+            return view_function(*args, **kwargs)
+        return wrapped_view
+    return decorator
 
 @main.route('/')
 def home():
