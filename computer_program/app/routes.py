@@ -6,7 +6,7 @@ from functools import wraps
 
 main = Blueprint('main', __name__)
 
-def roles_required(required_role):
+def role_required(required_role):
     def decorator(view_function):
         @wraps(view_function)
         def wrapped_view(*args, **kwargs):
@@ -60,10 +60,8 @@ def login():
 
 
 @main.route('/dashboard')
+@login_required
 def dashboard():
-    if 'user' not in session:
-        return redirect(url_for('main.login'))
-
     # load the current user from the database
     user = User.query.filter_by(username=session['user']).first()
     # security double-check
@@ -102,22 +100,18 @@ def register():
 
 
 @main.route('/admin-panel')
+@role_required('admin')
 def admin():
-    if session.get('role') != 'admin':
-        abort(403)
     return render_template('admin.html')
 
 @main.route('/moderator')
+@role_required('moderator')
 def moderator():
-    if session.get('role') != 'moderator':
-        abort(403)
     return render_template('moderator.html')
 
 @main.route('/user-dashboard')
+@role_required('user')
 def user_dashboard():
-    if session.get('role') != 'user':
-        abort(403)
-
     user = User.query.filter_by(username=session.get('user')).first()
     # security double-check
     if not user:
@@ -129,11 +123,8 @@ def user_dashboard():
 
 
 @main.route('/change-password', methods=['GET', 'POST'])
+@login_required
 def change_password():
-    # Require basic "login" state
-    if 'user' not in session:
-        abort(403)
-
     form = ChangePasswordForm()
 
     user = User.query.filter_by(username=session.get('user')).first()
