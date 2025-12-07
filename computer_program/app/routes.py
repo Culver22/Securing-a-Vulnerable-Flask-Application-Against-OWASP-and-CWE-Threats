@@ -19,6 +19,15 @@ def roles_required(required_role):
         return wrapped_view
     return decorator
 
+def login_required(view_function):
+    @wraps(view_function)
+    def wrapped_view(*args, **kwargs):
+        if 'user' not in session:
+            flash('Please log in.', 'error')
+            return redirect(url_for('main.login'))
+        return view_function(*args, **kwargs)
+    return wrapped_view
+
 @main.route('/')
 def home():
     return render_template('home.html')
