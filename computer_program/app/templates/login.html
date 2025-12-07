@@ -1,21 +1,42 @@
 {% extends "base.html" %}
 {% block title %}Login{% endblock %}
+
 {% block content %}
 <h1>Login</h1>
 
-<!-- Flash messages -->
+{# shows login error and success messages #}
 {% with messages = get_flashed_messages(with_categories=true) %}
-{% if messages %}
-{% for category, message in messages %}
-<p class="text-danger">{{ message }}</p>
-{% endfor %}
-{% endif %}
+  {% if messages %}
+    {% for category, message in messages %}
+      <p class="text-danger">{{ message }}</p>
+    {% endfor %}
+  {% endif %}
 {% endwith %}
 
 <form method="POST" novalidate>
-  Username: <input type="text" name="username"><br>
-  Password: <input type="password" name="password"><br>
-  <input type="submit" value="Login">
+    {# needed for CSRF protection, Flask-WTF adds secure hidden token) #}
+    {{ form.hidden_tag() }}
+
+    <p>
+        {{ form.username.label }}<br>
+        {# WTForms handles escaping for us so XSS can't run #}
+        {{ form.username }}
+
+        {# show validation problems directly under the field #}
+        {% for error in form.username.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </p>
+
+    <p>
+        {{ form.password.label }}<br>
+        {{ form.password }}
+
+        {% for error in form.password.errors %}
+            <span class="text-danger">{{ error }}</span>
+        {% endfor %}
+    </p>
+
+    <p>{{ form.submit() }}</p>
 </form>
 {% endblock %}
-
