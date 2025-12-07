@@ -1,4 +1,4 @@
-from flask import request, render_template, redirect, url_for, session, Blueprint, flash, abort
+from flask import request, render_template, redirect, url_for, session, Blueprint, flash, abort, current_app
 from app import db
 from app.models import User
 from app.forms import LoginForm, RegisterForm, ChangePasswordForm
@@ -11,9 +11,18 @@ def role_required(required_role):
         @wraps(view_function)
         def wrapped_view(*args, **kwargs):
             if 'user' not in session:
+                current_app.logger.error('Access denied (user not logged in) | required role: %s | ip=%s |',
+                                         required_role, request.remote_addr)
                 flash('Please log in.', 'error')
                 return redirect(url_for('main.login'))
+
+            role = session.get('role')
+            username = session.get('user')
+
+
             if session.get('role') != required_role:
+                current_app.logger.warning("Access denied (incorrect role) | user=%s | role=%s | required=%s "
+                                           "| ip=%s",username, role, required_role, request.remote_addr)
                 abort(403)
             return view_function(*args, **kwargs)
         return wrapped_view
@@ -23,6 +32,7 @@ def login_required(view_function):
     @wraps(view_function)
     def wrapped_view(*args, **kwargs):
         if 'user' not in session:
+            current_app.logger.error('Access denied (user not logged in) |  ip=%s |',request.remote_addr)
             flash('Please log in.', 'error')
             return redirect(url_for('main.login'))
         return view_function(*args, **kwargs)
