@@ -74,6 +74,19 @@ def login():
 
     return render_template('login.html', form=form)
 
+@main.route('/logout')
+@login_required
+def logout():
+    username = session.get('user')
+    # clear all session data
+    session.clear()
+
+    current_app.logger.info(
+        "User logged out | user=%s | ip=%s",username, request.remote_addr)
+
+    flash("You have been logged out.", "success")
+    return redirect(url_for('main.login'))
+
 
 @main.route('/dashboard')
 @login_required

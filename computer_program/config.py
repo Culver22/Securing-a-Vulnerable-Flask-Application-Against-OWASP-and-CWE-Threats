@@ -24,7 +24,7 @@ class DevConfig(Config):
     PASSWORD_PEPPER = "dev-pepper-change-me"
 
     # hard coded to ensure the app runs
-    FERNET_KEY = "dev-fernet-key-change-me"
+    FERNET_KEY = "Kidsqp3Y522p82yI82yqV15fa5QcTFkhYhA7WpzMCLI="
 
     SESSION_COOKIE_SECURE = False
 
@@ -39,6 +39,7 @@ class ProdConfig(Config):
     FERNET_KEY = os.environ.get("FERNET_KEY", "")
 
     # Fail if any key cannot be loaded
-    if not SECRET_KEY or not PASSWORD_PEPPER or not FERNET_KEY:
-        raise RuntimeError("Production secrets must be set in environment variables!")
+    if os.environ.get("FLASK_ENV") == "production":
+        if not SECRET_KEY or not PASSWORD_PEPPER or not FERNET_KEY:
+            raise RuntimeError("Production secrets must be set in environment variables!")
 
