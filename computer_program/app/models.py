@@ -7,7 +7,7 @@ from app import db
 
 def _get_fernet():
     # get encryption key from flask config, loaded from an environment variable in config.py
-    key = current_app.config.get["FERNET_KEY"]
+    key = current_app.config.get("FERNET_KEY")
     # in order to avoid running insecurely, end the program
     if not key:
         raise RuntimeError('FERNET_KEY has not been set in the environment')
@@ -32,7 +32,8 @@ class User(db.Model):
     bio = db.Column(db.Text, nullable=False)
 
     def __init__(self, username, password, role, bio):
-        self.username = username
+        # trim and normalise before storing
+        self.username = (username or "").strip().lower()
         self.set_password(password) # hash and pepper
         self.role = role
         self.set_bio(bio) # sanitised and encrypted
@@ -58,7 +59,7 @@ class User(db.Model):
         safe_bio = sanitise_bio(bio)
         fernet = _get_fernet()
         encrypted = fernet.encrypt(safe_bio.encode('utf-8'))
-        # encrypt bio to bytes, then decode to a UTF-8 string which can be safely stored in the db
+        # encrypt bio to bytes, then decode to UTF-8 before safely stored in the db
         self.bio = encrypted.decode('utf-8')
 
     def get_bio(self):
