@@ -1,4 +1,6 @@
-flask
-flask-sqlalchemy
-flask-wtf
+Flask
+Flask-SQLAlchemy
+Flask-WTF
+WTForms
+Werkzeug
 cryptography
