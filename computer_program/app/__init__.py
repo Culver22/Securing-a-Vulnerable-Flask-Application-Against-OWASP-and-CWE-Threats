@@ -1,6 +1,9 @@
 from flask import Flask, render_template
 from flask_sqlalchemy import SQLAlchemy
 from config import DevConfig
+import logging
+from logging.handlers import RotatingFileHandler
+import os
 
 db = SQLAlchemy()
 
@@ -9,6 +12,22 @@ def create_app():
     app.config.from_object(DevConfig)
 
     db.init_app(app)
+
+    # directory for logs
+    logs_dir = os.path.join(app.root_path, 'logs')
+    os.makedirs(logs_dir, exist_ok=True)
+
+    log_path = os.path.join(logs_dir, 'security.log')
+
+    # rotating file handler with a maximum size of 1MB and 5 history files
+    file_handler = RotatingFileHandler(log_path, maxBytes=1000000, backupCount=5)
+
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    file_handler.setFormatter(formatter)
+
+    # log the errors and warnings
+    file_handler.setLevel(logging.WARNING)
+    app.logger.addHandler(file_handler)
 
     from app.routes import main
     app.register_blueprint(main)
