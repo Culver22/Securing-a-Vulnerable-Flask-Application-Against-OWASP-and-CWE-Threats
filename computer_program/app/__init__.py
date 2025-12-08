@@ -10,8 +10,24 @@ def create_app():
 
     db.init_app(app)
 
-    from .routes import main
+    from app.routes import main
     app.register_blueprint(main)
+
+    @app.after_request
+    def apply_security_headers(response):
+        # stops browsers guessing content types
+        response.headers.setdefault("X-Content-Type-Options", "nosniff")
+        # stops the site being put in an iframe - clickjacking
+        response.headers.setdefault("X-Frame-Options", "DENY")
+        # do not leak URLs in the Referer header
+        response.headers.setdefault("Referrer-Policy", "no-referrer")
+        # only allow content from this server (mitigates cross site scripting)
+        response.headers.setdefault("Content-Security-Policy default-src 'self'; script-src 'self'; style-src 'self';"
+                                                               " object-src 'none'; base-uri 'self';"
+                                                               " frame-ancestors 'none'")
+        # tell browser to prefer HTTPS (for production use)
+        response.headers.setdefault("Strict-Transport-Security max-age=31536000; includeSubDomains")
+        return response
 
     @app.errorhandler(400)
     def bad_request(error):

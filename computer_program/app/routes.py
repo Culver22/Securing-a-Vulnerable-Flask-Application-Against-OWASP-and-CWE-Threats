@@ -61,9 +61,15 @@ def login():
             session['user'] = user.username
             session['role'] = user.role
 
+            current_app.logger.info('Login Successful | user=%s | role=%s | ip=%s |',
+                                    user.username, user.role, request.remote_addr)
+
             flash('Login Successful', 'success')
             return redirect(url_for('main.dashboard'))
         else:
+            current_app.logger.info('Login Unsuccessful | user=%s | ip=%s |',
+                                    username, request.remote_addr)
+
             flash('Login Unsuccessful, please try again', 'error')
 
     return render_template('login.html', form=form)
@@ -96,6 +102,8 @@ def register():
         # check email isn't already registered
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
+            current_app.logger.warning("Registration failed (email exists) | username=%s | ip=%s",
+                                       username, request.remote_addr)
             flash(f"An account with the email address '{username}' already exists", "error")
             return render_template('register.html', form=form)
 
@@ -103,6 +111,8 @@ def register():
         db.session.add(user)
         db.session.commit()
 
+        current_app.logger.info("Registration successful | username=%s | role=%s | ip=%s",
+            user.username,user.role, request.remote_addr)
         flash('Registration Successful', 'success')
         return redirect(url_for('main.login'))
 
@@ -139,6 +149,8 @@ def change_password():
 
     user = User.query.filter_by(username=session.get('user')).first()
     if not user:
+        current_app.logger.warning("Change password failed (user not found) | session_user=%s | ip=%s",
+            session.get('user'), request.remote_addr)
         flash('User not found.', 'error')
         session.clear()
         return redirect(url_for('main.login'))
@@ -149,11 +161,16 @@ def change_password():
 
         # check current password against the hashed password
         if not user.check_password(current_password):
+            current_app.logger.warning("Change password failed (wrong current password) | user=%s | ip=%s",
+                user.username, request.remote_addr)
             flash('Current password is incorrect', 'error')
             return render_template('change_password.html', form=form)
 
         # check the new password is different to the current password
         if user.check_password(new_password):
+            current_app.logger.warning(
+                "Change password failed (new password same as old) | user=%s | ip=%s",
+                user.username, request.remote_addr)
             flash("New password must be different from your current password.", "error")
             return render_template('change_password.html', form=form)
 
@@ -161,6 +178,8 @@ def change_password():
         user.set_password(new_password)
         db.session.commit()
 
+        current_app.logger.info("Password changed successfully | user=%s | ip=%s",
+            user.username, request.remote_addr)
         flash('Your password has been changed.', 'success')
         return redirect(url_for('main.dashboard'))
 
